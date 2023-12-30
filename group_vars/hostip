@@ -1,5 +1,5 @@
-web01
-app01
-rmq01
-mc01
-db01
+web01_ip:
+app01_ip:
+rmq01_ip:
+mc01_ip:
+db01_ip:
