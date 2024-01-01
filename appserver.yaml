@@ -35,7 +35,7 @@
     - name: Extract tomcat
       ansible.builtin.unarchive:
         src: /tmp/tomcat-8.tar.gz
-        dét: /tmp/tomcat8/
+        dest: /tmp/tomcat8/
         remote_src: yes
         list_files: yes
       register: unarchive_info
