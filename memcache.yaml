@@ -1,0 +1,29 @@
+---
+- name: Install Memcache, Start & enable svc
+  hosts: mcsrvgrp
+  gather_facts: false
+  tasks:
+    - name: Install Memcache
+      apt:
+        name: memcached
+        state: present
+        update_cache: yes
+        cache_valid_time: 86400
+    - name: Start & enable memcache
+      service:
+        name: memcached
+        state: started
+        enable: yes
+    - name: Enable remote login to memcache
+      lineinfile:
+        path: /etc/memcached.conf
+        regexp: '^-l'
+        line: '-l 0.0.0.0'
+        backup: yes
+      notify:
+        - Restart memcached
+  handlers:
+    - name: Restart memcached
+      ansible.builtin.service:
+        name: memcached
+        state: restarted

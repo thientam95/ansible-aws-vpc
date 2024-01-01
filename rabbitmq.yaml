@@ -1,0 +1,77 @@
+- name: Install & setup RabbitMQ with user
+  hosts: rmqsrvgrp
+  gather_facts: false
+  tasks:
+    - name: Install dependencies
+      ansible.builtin.apt:
+        name: apt-transport-https
+        state: present
+        update_cache: yes
+        cache_valid_time: 86400
+    
+    - name: Add Erlang Reposiroty Key
+      ansible.builtin.apt_key:
+        url: https://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc
+        state: present
+    
+    - name: Install Erlang
+      ansible.builtin.apt:
+        name: erlang
+        state: present
+        update_cache: yes
+    
+    - name: download script to add RabbitMQ Reposiroty
+      ansible.builtin.get_url:
+        url: https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.deb.sh
+        dest: /tmp/
+        mode: 755
+
+    - name: Install RabbitMQ Reposiroty
+      ansible.builtin.shell: /tmp/script.deb.sh  
+
+    - name: Install RabbitMQ
+      ansible.builtin.apt:
+        name: rabbitmq-server
+        state: present
+        update_cache: yes
+    
+    - name: Start & Enable RabbitMQ
+      ansible.builtin.service:
+        name: rabbitmq-server
+        state: started
+        enabled: yes
+
+    - name: Config setup
+      ansible.builtin.copy:
+        content: |
+          [{rabbit, [{loopback_users, []}]}].
+        dest: /etc/rabbitmq/rabbitmq.config  
+      notify:
+        - Restart RMQ
+    
+    - name: Add RabitMQ user
+      community.rabbitmq.rabbitmq_user:
+        user: test
+        password: test
+        configure_priv: .*
+        read_priv: .*
+        write_priv: .*
+        state: present
+      notify:
+        - Restart RMQ
+
+    - name: Enable the rabbitmq_management plugin
+      community.rabbitmq.rabbitmq_plugin:
+        names: rabbitmq_management
+        state: enabled 
+      notify:
+        - Restart RMQ
+
+  handlers:
+    - name: Restart RMQ
+      ansible.builtin.service:
+        name: rabbitmq-server
+        state: restarted
+
+
+        

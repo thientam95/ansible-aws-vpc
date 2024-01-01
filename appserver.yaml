@@ -1,0 +1,151 @@
+- name: Setup Tomcat & Deploy Artifact
+  hosts: 18.142.230.208
+  vars:
+    timestamp: "{{ansible_date_time.date}}_{{ansible_date_time.hour}}_{{ansible_date_time.minute}}"
+    tom_url: https://archive.apache.org/dist/tomcat/tomcat-8/v8.5.37/bin/apache-tomcat-8.5.37.tar.gz
+  tasks:
+    - name: Install JDK
+      ansible.builtin.apt:
+        name: openjdk-8-jdk
+        state:  present
+        update_cache: yes
+    
+    - name: Download Tomcat Tar Ball/Binaries
+      ansible.builtin.get_url:
+        url: "{{tom_url}}"
+        dest: /tmp/tomcat-8.tar.gz
+    
+    - name: Add tomcat group
+      ansible.builtin.group:
+        name: tomcat
+        state: present
+    
+    - name: Add tomcat user
+      ansible.builtin.user:
+        name: tomcat
+        group: tomcat
+        shell: /bin/nologin
+        home: /usr/local/tomcat8
+
+    - name: Create directory if not exists
+      ansible.builtin.file:
+        path: /tmp/tomcat8
+        state: directory
+    
+    - name: Extract tomcat
+      ansible.builtin.unarchive:
+        src: /tmp/tomcat-8.tar.gz
+        dét: /tmp/tomcat8/
+        remote_src: yes
+        list_files: yes
+      register: unarchive_info
+    
+    - debug:
+        msg: "{{unarchive_info}}"
+
+    - name: Synchronize /tmp/tomcat8/tomcat_cont /usr/local/tomcat8.
+      synchronize:
+        src: "/tmp/tomcat8/{{unarchive_info.files[0].split('/')[0]}}/"
+        dest: /usr/local/tomcat8/
+      delegate_to: "{{ inventory_hostname }}"
+  
+    - name: Change ownership of /usr/local/tomcat8
+      file:
+        path: /usr/local/tomcat8
+        owner: tomcat
+        group: tomcat
+        recurse: yes  
+    
+    - name: Setup tomcat SVC file
+      template:
+        src: templates/tomcat8-ubuntu-svcfile.j2
+        dest: /etc/systemd/system/tomcat8.service
+        mode: "a+x"
+
+    - name : Reload config
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Start & Enable tomcat SVC
+      service:
+        name: tomcat8
+        state: started
+        enabled: yes
+    
+    - name: Get status webapp
+      ansible.builtin.stat:
+        path: /usr/local/tomcat8/webapps/ROOT
+      register: artifact_stat
+
+    - name: Stop tomcat8 svc
+      ansible.builtin.service:
+        name: tomcat8
+        state: stopped
+    
+    - name: Try Backup and Deploy
+      block:
+        - name: Archive ROOT dir with timestamp
+          archive:
+            path: /usr/local/tomcat8/webapps/ROOT
+            dest: "/opt/ROOT_{{timestamp}}.tgz"
+          when: artifact_stat.stat.exists
+          register: archive_info
+        
+        - name: copy ROOT dir with old_ROOT name
+          shell: cp -r ROOT old_ROOT
+          args:
+            chdir: /usr/local/tomcat8/webapps/
+
+        - name: Delete current artifact
+          file:
+            path: "{{item}}"
+            state: absent
+          when: archive_info.changed
+          loop:
+            - /usr/local/tomcat8/webapps/ROOT
+            - /usr/local/tomcat8/webapps/ROOT.war
+
+        - name: Try deploy artifact else restore from previos old_ROOT
+          block:
+            - name: Deploy vprofile artifact
+              copy:
+                src: files/ROOT.war
+                dest: /usr/local/tomcat8/webapps/ROOT.war
+              register: deploy_info
+          rescue:
+            - shell: cp -r old_ROOT ROOT
+              args:
+                chdir: /usr/local/tomcat8/webapps/   
+      rescue:
+        - name: Start tomcat8 svc
+          service:
+            name: tomcat8
+            state: started    
+
+    - name: Start tomcat8 svc
+      service:
+        name: tomcat8
+        state: started
+      when: deploy_info.changed
+
+    - name: Wait until ROOT.war is extracted to ROOT directory
+      wait_for:
+        path: /usr/local/tomcat8/webapps/ROOT
+      tags:
+        - deploy
+
+    - name: Deploy web configuration file
+      template:
+        src: templates/application.j2
+        dest: /usr/local/tomcat8/webapps/ROOT/WEB-INF/classes/application.properties
+        force: yes
+      notify:
+        - Restart Tomcat
+      tags:
+        - deploy
+
+  handlers:
+    - name: Restart Tomcat
+      service:
+        name: tomcat8
+        state: restarted
