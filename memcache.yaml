@@ -14,7 +14,7 @@
       service:
         name: memcached
         state: started
-        enable: yes
+        enabled: yes
 
     - name: Enable remote login to memcache
       lineinfile:
