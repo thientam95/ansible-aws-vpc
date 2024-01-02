@@ -1,5 +1,5 @@
 - name: Install & setup RabbitMQ with user
-  hosts: webserver
+  hosts: rmqsrvgrp
   gather_facts: false
   tasks:
     - name: Install dependencies

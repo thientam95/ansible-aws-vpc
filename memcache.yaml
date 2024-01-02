@@ -1,6 +1,6 @@
 ---
 - name: Install Memcache, Start & enable svc
-  hosts: webserver
+  hosts: mcsrvgrp
   gather_facts: false
   tasks:
     - name: Install Memcache

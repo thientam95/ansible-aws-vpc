@@ -1,6 +1,6 @@
 ---
 - name: Setup Mysql with accounts db and remote login
-  hosts: webserver
+  hosts: dbsrvgrp
   gather_facts: false
   tasks:
     - name: Import MySql config Variables

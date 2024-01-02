@@ -1,5 +1,10 @@
-[webserver]
-13.229.71.247
-
-[webserver:vars]
-ansible_ssh_private_key_file = ./my-private-key.pem
+[websrvgrp]
+172.20.1.181
+[mcsrvgrp]
+172.20.1.87
+[rmqsrvgrp]
+172.20.1.238
+[dbsrvgrp]
+172.20.1.201
+[appsrvgrp]
+172.20.1.53
