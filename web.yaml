@@ -1,6 +1,6 @@
 ---
 - name: Setup nginx
-  hosts: websrvgrp
+  hosts: webserver
   gather_facts: false
   tasks:
     - name: Install nginx

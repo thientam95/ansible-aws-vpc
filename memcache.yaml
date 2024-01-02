@@ -1,6 +1,6 @@
 ---
 - name: Install Memcache, Start & enable svc
-  hosts: mcsrvgrp
+  hosts: webserver
   gather_facts: false
   tasks:
     - name: Install Memcache
@@ -24,7 +24,7 @@
         backup: yes
       notify:
         - Restart memcached
-        
+
   handlers:
     - name: Restart memcached
       ansible.builtin.service:
