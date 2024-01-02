@@ -9,10 +9,13 @@
         update_cache: yes
         cache_valid_time: 86400
     
-    - name: Add Erlang Reposiroty Key
-      ansible.builtin.apt_key:
-        url: https://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc
-        state: present
+    - name: Download script to install
+      ansible.builtin.get_url:
+        url: https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-erlang/setup.deb.sh
+        dest: /tmp/erlang.sh
+        mode: 755
+    - name: Execute script
+      ansible.builtin.shell: /tmp/erlang.sh 
     
     - name: Install Erlang
       ansible.builtin.apt:
@@ -23,11 +26,11 @@
     - name: download script to add RabbitMQ Reposiroty
       ansible.builtin.get_url:
         url: https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.deb.sh
-        dest: /tmp/
+        dest: /tmp/rabbit.sh
         mode: 755
 
     - name: Install RabbitMQ Reposiroty
-      ansible.builtin.shell: /tmp/script.deb.sh  
+      ansible.builtin.shell: /tmp/rabbit.sh  
 
     - name: Install RabbitMQ
       ansible.builtin.apt:
