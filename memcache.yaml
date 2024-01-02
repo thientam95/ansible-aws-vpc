@@ -9,11 +9,13 @@
         state: present
         update_cache: yes
         cache_valid_time: 86400
+
     - name: Start & enable memcache
       service:
         name: memcached
         state: started
         enable: yes
+
     - name: Enable remote login to memcache
       lineinfile:
         path: /etc/memcached.conf
@@ -22,6 +24,7 @@
         backup: yes
       notify:
         - Restart memcached
+        
   handlers:
     - name: Restart memcached
       ansible.builtin.service:

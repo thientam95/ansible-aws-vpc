@@ -3,13 +3,16 @@
   hosts: dbsrvgrp
   gather_facts: no
   tasks:
+    - name: Import MySql config Variables
+      ansible.builtin.include_vars: group_vars/dbsrvgrp
+      
     - name: Copy SQL to dbsrvgrp
-      copy:
+      ansible.builtin.copy:
         src: files/db_backup.sql
         dest: /tmp/db_backup.sql
   
     - name: Restoring db
-      mysql_db:
+      community.mysql.mysql_db:
         name: accounts
         login_user: "{{dbuser}}"
         login_password: "{{dbpass}}"

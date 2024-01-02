@@ -19,7 +19,7 @@
       version: vp-rem
     register: git_status
 
-  - name: Change the working directory to somedir/ and run the command as db_owner if /path/to/database does not exist
+  - name: Build rtifact
     ansible.builtin.command: mvn install
     args:
       chdir: Vprofile-repo
